@@ -38,8 +38,10 @@ RUN ln -s /bin/tar /bin/gtar
 USER ${NB_UID}
 
 # R packages including IRKernel which gets installed globally.
+# Use older version of R and build from source
+# Because R graphics engine version 14 is not supported by this version of RStudio
 RUN conda install --quiet --yes \
-    'r-base' \
+    'r-base=3.6.3' \
     'r-caret' \
     'r-crayon' \
     'r-devtools' \
@@ -94,8 +96,8 @@ USER root
 # from https://github.com/rstudio/rstudio-docker-products/blob/main/r-session-complete/bionic/Dockerfile
 # and https://support.rstudio.com/hc/en-us/articles/206794537-Common-dependencies-for-RStudio-Workbench-and-RStudio-Server
 # and https://github.com/rocker-org/rocker-versioned/blob/master/rstudio/3.6.3.Dockerfile
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update --yes && \
+    apt-get install --yes --no-install-recommends \
         psmisc \
         libapparmor1 \
         lsb-release \
@@ -122,8 +124,6 @@ ARG LITTLER=${R_HOME}/library/littler
 RUN \
     # Download R studio
     curl --silent -L --fail https://s3.amazonaws.com/rstudio-ide-build/server/bionic/amd64/rstudio-server-${RSTUDIO_VERSION}-amd64.deb > /tmp/rstudio.deb && \
-    #echo '81f72d5f986a776eee0f11e69a536fb7 /tmp/rstudio.deb' | md5sum -c - && \
-    \
     # Install R studio
     apt-get update && \
     apt-get install -y --no-install-recommends /tmp/rstudio.deb && \
