@@ -85,6 +85,9 @@ RUN Rscript requirements.R && rm requirements.R
 
 ##### START RStudio code
 # from https://github.com/dddlab/docker-notebooks/blob/master/python-rstudio-notebook/Dockerfile
+# Latest possible version before RStudio and jupyter-rsession-proxy break as issue described at
+# https://github.com/jupyterhub/jupyter-rsession-proxy/issues/93
+ENV RSTUDIO_VERSION=1.2.5042
 USER root
 
 # RStudio pre-requisites
@@ -103,15 +106,13 @@ RUN apt-get update && \
         libc6 \
         psmisc \
         rrdtool \
+        libcurl4-gnutls-dev \
         libssl1.1 \
         libssl-dev \
         libuser \
         libuser1-dev \
         libpq-dev \
-        libpq5 \
-        libcurl4-openssl-dev \
-        procps \
-        python-setuptools && \
+        libpq5 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* 
 
 ENV PATH=$PATH:/${NB_USER}/lib/rstudio-server/bin \
@@ -119,24 +120,15 @@ ENV PATH=$PATH:/${NB_USER}/lib/rstudio-server/bin \
 ARG LITTLER=${R_HOME}/library/littler
 
 RUN \
-    # download R studio
-    curl --silent -L --fail https://s3.amazonaws.com/rstudio-ide-build/server/bionic/amd64/rstudio-server-1.4.1722-amd64.deb > /tmp/rstudio.deb && \
+    # Download R studio
+    curl --silent -L --fail https://s3.amazonaws.com/rstudio-ide-build/server/bionic/amd64/rstudio-server-${RSTUDIO_VERSION}-amd64.deb > /tmp/rstudio.deb && \
     #echo '81f72d5f986a776eee0f11e69a536fb7 /tmp/rstudio.deb' | md5sum -c - && \
     \
-    # install R studio
+    # Install R studio
     apt-get update && \
     apt-get install -y --no-install-recommends /tmp/rstudio.deb && \
     rm /tmp/rstudio.deb && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    \
-    # Download RStudio
-    #apt-get update && \
-    #apt-get install -y gdebi-core && \
-    #wget https://download2.rstudio.org/server/bionic/amd64/rstudio-server-1.4.1717-amd64.deb && \
-    #echo 'ce2c6d5423823716bbd6c2d819812ed98b6ab3ea96bcfdbc6d310fd1c1286b17  rstudio-server-1.4.1717-amd64.deb' | sha256sum -c && \
-    #gdebi rstudio-server-1.4.1717-amd64.deb && \
-    #apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     # Set default CRAN mirror
     echo -e "local({\n r <- getOption('repos')\n r['CRAN'] <- 'https://cloud.r-project.org'\n  options(repos = r)\n })" > $R_HOME/etc/Rprofile.site && \
     \
@@ -183,21 +175,9 @@ RUN jupyter labextension install @jupyterlab/toc --clean && \
     jupyter labextension install nbdime-jupyterlab
 
 
-##### START Jupyter & RStudio code
+##### Jupyter & RStudio
 # from https://github.com/dddlab/docker-notebooks/blob/master/python-rstudio-notebook/Dockerfile
-# Need to set ENV for jupyter-rsession-proxy to work with RStudio > 1.4
-# See https://github.com/jupyterhub/jupyter-rsession-proxy/issues/95
-# Patch from https://github.com/riazarbi/datasci-gui-minimal/blob/focal/Dockerfile
-USER root
-
-ENV RSESSION_PROXY_RSTUDIO_1_4=yes
-
-RUN pip install git+https://github.com/zeehio/jupyter-server-proxy.git@03afb8b6816d0cf51af34bb995d6da078aac6185 && \
-    pip install git+https://github.com/zeehio/jupyter-rsession-proxy.git@9def6461460e3b43df7db718c3276504d4252873 && \
-    # Fix revocation list permissions for rserver
-    echo "auth-revocation-list-dir=/tmp/rstudio-server-revocation-list/" >> /etc/rstudio/rserver.conf && \
-    rm -rf /tmp/* && \
-    #pip install jupyter-server-proxy jupyter-rsession-proxy && \
+RUN pip install jupyter-server-proxy jupyter-rsession-proxy && \
     \
     # Remove cache
     rm -rf ~/.cache/pip ~/.cache/matplotlib ~/.cache/yarn && \
@@ -205,4 +185,3 @@ RUN pip install git+https://github.com/zeehio/jupyter-server-proxy.git@03afb8b68
     conda clean --all -f -y && \
     fix-permissions ${CONDA_DIR} && \
     fix-permissions /home/${NB_USER}
-##### END Jupyter & RStudio code
