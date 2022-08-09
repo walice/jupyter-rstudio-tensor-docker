@@ -13,7 +13,7 @@ openssl req -x509 -nodes \
     chmod a+r .setup/keys/mykey.key
 
 echo "### Download password generating utility"
-curl -fSL https://github.com/dddlab/jupyter-passwd/releases/download/v0.1.1/hash-password \
+curl https://raw.githubusercontent.com/dddlab/jupyter-passwd/main/hash-password.sh \
     -o .setup/hash-password && \
     chmod u+x .setup/hash-password
 
