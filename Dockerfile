@@ -171,8 +171,7 @@ RUN \
 
 
 ##### Jupyter Lab extensions
-RUN jupyter labextension install @jupyterlab/toc --clean && \
-    jupyter labextension install nbdime-jupyterlab
+RUN jupyter labextension install nbdime-jupyterlab
 
 
 ##### Jupyter & RStudio
